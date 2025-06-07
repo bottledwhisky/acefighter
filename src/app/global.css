@@ -1,0 +1,247 @@
+.cell {
+  background-color: lightblue;
+  width: 50px;
+  height: 50px;
+}
+
+.cell:hover {
+  background: initial !important;
+  background-color: lightgreen !important;
+}
+
+.cell.selected {
+  background-color: lightcoral;
+}
+
+.cell.fow {
+  background-color: lightgray;
+}
+
+.cell.fow.exposed {
+  background: repeating-linear-gradient(45deg,
+      lightgray,
+      lightgray 8px,
+      #ffd500 8px,
+      #ffd500 10px);
+}
+
+.cell.exposed {
+  background: repeating-linear-gradient(45deg,
+      lightblue,
+      lightblue 8px,
+      #ffd500 8px,
+      #ffd500 10px);
+}
+
+.row {
+  display: flex;
+}
+
+.idle-indicator {
+  /* a small green dot in the top-left corner */
+  width: 10px;
+  height: 10px;
+  background-color: green;
+  border-radius: 50%;
+  position: relative;
+  top: 0;
+  left: 0;
+}
+
+.idle-indicator.moved.has-action {
+  background-color: yellow;
+}
+
+.idle-indicator.moved.no-action {
+  background-color: red;
+}
+
+.piece {
+  top: -10px;
+}
+
+.movable-preview {
+  position: absolute;
+  top: -10px;
+  opacity: 0.5;
+}
+
+.turn-arrow {
+  position: absolute;
+  z-index: 100;
+  overflow: visible;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  background-size: cover;
+  background-image: url(/acefighter/arrow.svg);
+  background-repeat: no-repeat;
+}
+
+.turn-arrow:hover {
+  border: 5px solid green;
+  margin: -5px;
+}
+
+.turn-arrow.left {
+  transform: rotate(270deg);
+}
+
+.turn-arrow.right {
+  transform: rotate(90deg);
+}
+
+.turn-arrow.down {
+  transform: rotate(180deg);
+}
+
+.action-menu {
+  position: absolute;
+  z-index: 100;
+  overflow: visible;
+  background-color: white;
+  border: 1px solid black;
+  padding: 5px;
+}
+
+.action-menu .action .menu-item {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.action-menu .action .menu-item:hover {
+  background-color: lightblue;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-grow: 1;
+}
+
+.game-title {
+  text-align: center;
+  font-size: 3em;
+  color: #999;
+}
+
+.main-menu {
+  width: 250px;
+  margin: auto;
+  font-size: 2em;
+  text-align: center;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  margin: 0;
+  background-color: #0A1124;
+}
+
+.menu-item {
+  border: 5px solid bisque;
+  border-radius: 10px;
+}
+
+.disabled {
+  pointer-events: none;
+  color: #999;
+}
+
+.locale-selector {
+  align-items: stretch;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.locale-selector img {
+  margin: 5px;
+  cursor: pointer;
+}
+
+.announcement {
+  display: flex;
+  margin: auto;
+  background: #999;
+  flex-direction: column;
+  padding: 50px;
+  border: #234297 solid 10px;
+  border-radius: 50px;
+  display: flex;
+  justify-content: center;
+  align-self: center;
+}
+
+.announcement button {
+  margin-top: 10px
+}
+
+@keyframes rollout {
+  0% {
+    transform: scale(0.1);
+  }
+
+  80% {
+    transform: none;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+.explosion {
+  animation: rollout 0.4s;
+}
+
+
+/* CSS */
+button {
+  align-items: center;
+  background-color: #0A66C2;
+  border: 0;
+  border-radius: 100px;
+  box-sizing: border-box;
+  color: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: -apple-system, system-ui, system-ui, "Segoe UI", Roboto, "Helvetica Neue", "Fira Sans", Ubuntu, Oxygen, "Oxygen Sans", Cantarell, "Droid Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Lucida Grande", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  justify-content: center;
+  line-height: 20px;
+  max-width: 480px;
+  min-height: 40px;
+  min-width: 0px;
+  overflow: hidden;
+  padding: 0px;
+  padding-left: 20px;
+  padding-right: 20px;
+  text-align: center;
+  touch-action: manipulation;
+  transition: background-color 0.167s cubic-bezier(0.4, 0, 0.2, 1) 0s, box-shadow 0.167s cubic-bezier(0.4, 0, 0.2, 1) 0s, color 0.167s cubic-bezier(0.4, 0, 0.2, 1) 0s;
+  user-select: none;
+  -webkit-user-select: none;
+  vertical-align: middle;
+}
+
+button:hover,
+button:focus {
+  background-color: #16437E;
+  color: #ffffff;
+}
+
+button:active {
+  background: #09223b;
+  color: rgb(255, 255, 255, .7);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, .08);
+  color: rgba(0, 0, 0, .3);
+}
