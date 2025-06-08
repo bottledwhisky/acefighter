@@ -9,7 +9,7 @@ import {
 } from "./gameClient";
 import Missile from "@/app/animations/missile";
 import MenuItem from "@/app/MenuItem";
-import { LocalizeFunc } from "./i18n";
+import { LocalizeFunc, Stringifyable } from "./i18n";
 import { basePath } from "@/config";
 
 export enum Player {
@@ -31,6 +31,23 @@ export class Position {
     return new Position(this.x + other.x * times, this.y + other.y * times);
   }
 
+  substract(other: Position): Position {
+    return new Position(this.x - other.x, this.y - other.y);
+  }
+
+  dotMul(other: Position): Position {
+    return new Position(this.x * other.x, this.y * other.y);
+  }
+
+  unit(): Position {
+    const length = this.length();
+    return new Position(this.x / length, this.y / length);
+  }
+
+  length(): number {
+    return Math.sqrt(this.x * this.x + this.y * this.y);
+  }
+
   equals(other: Position): boolean {
     return this.x === other.x && this.y === other.y;
   }
@@ -39,8 +56,10 @@ export class Position {
     return this.x < 0 || this.x >= width || this.y < 0 || this.y >= height;
   }
 
-  distance(position: Position) {
-    return Math.abs(this.x - position.x) + Math.abs(this.y - position.y);
+  distance(position: Position, direction?: Direction): number {
+    const rawDist = Math.abs(this.x - position.x) + Math.abs(this.y - position.y);
+    const dirDist = direction ? position.substract(this).dotMul(directionDeltas[direction]).unit().length() / 10 : 0;
+    return rawDist - dirDist;
   }
 
   toString(): string {
@@ -110,14 +129,16 @@ export function backwardDirection(direction: Direction): Direction {
   }
 }
 
-type actionCB = (pieceDOM: DOMRect) => void;
+type DOMRect = { x: number, y: number, width: number, height: number };
+type ActionCB = (pieceDOM: DOMRect) => void;
 
 export class Move {
   constructor(
     public piece: Piece,
     public moveTo: { position: Position; direction: Direction },
     public actions: string[],
-    public killTarget?: Piece
+    public killTarget?: Piece,
+    public priority: number = 0,
   ) { }
 }
 
@@ -155,7 +176,7 @@ export abstract class Piece {
     this.game.movePiece(this.position, p, direction);
   }
 
-  abstract getActions(): [string, actionCB, () => React.ReactNode][];
+  abstract getActions(): [string, ActionCB, () => React.ReactNode][];
   getPossibleMoves(): { position: Position; direction: Direction }[] {
     if (this.moved) return [];
     return this.getMoves();
@@ -275,7 +296,7 @@ export abstract class Piece {
     let bestMove = moves[0];
     let bestDistance = this.game.width + this.game.height;
     for (const move of moves) {
-      const distance = move.position.distance(targetPosition);
+      const distance = move.position.distance(targetPosition, move.direction);
       if (distance < bestDistance) {
         bestDistance = distance;
         bestMove = move;
@@ -286,6 +307,10 @@ export abstract class Piece {
 
   killMoves(): Move[] {
     return [];
+  }
+
+  canDeploy(p: Position) {
+    return p.y === this.game.height - 1;
   }
 }
 
@@ -360,8 +385,8 @@ export class Fighter extends Piece {
     }
   }
 
-  getActions(): [string, actionCB, () => React.ReactNode][] {
-    const actions: [string, actionCB, () => React.ReactNode][] = [];
+  getActions(): [string, ActionCB, () => React.ReactNode][] {
+    const actions: [string, ActionCB, () => React.ReactNode][] = [];
     if (!this.fired) {
       actions.push([
         "fire",
@@ -446,15 +471,29 @@ export class Fighter extends Piece {
     const moves = this.getPossibleMoves();
     for (const move of moves) {
       const pos = move.position;
+      const targetPosPiece = this.game.getPiece(pos);
+      if (targetPosPiece != null && targetPosPiece.player !== this.player) {
+        // crash
+        killMoves.push(new Move(this, move, [], targetPosPiece, 1));
+        continue;
+      }
       for (let i = 1; i <= this.missileRange; i++) {
-        const newMissilePosition = pos.add(directionDeltas[this.direction], i);
+        const newMissilePosition = pos.add(directionDeltas[move.direction], i);
         const piece = this.game.getPiece(newMissilePosition);
-        if (piece != null && piece.player !== this.player) {
-          killMoves.push(new Move(this, move, ["fire"], piece));
+        if (piece != null) {
+          if (piece.player !== this.player) {
+            killMoves.push(new Move(this, move, ["fire"], piece));
+          } else {
+            break;
+          }
         }
       }
     }
     return killMoves;
+  }
+
+  canDeploy(p: Position) {
+    return p.y >= this.game.height - 2;
   }
 }
 
@@ -527,24 +566,26 @@ function emtpyBoard(width: number, height: number): (Piece | null)[][] {
   return pieces;
 }
 
+let gameId = 0;
+
 export class GameModel {
   public addAnimation: (
     animationMaker: (endCb: () => void) => { node: ReactNode, onEnd?: () => void }
   ) => void = () => { };
-  public forceUpdate: () => void = () => { };
   public pieces: (Piece | null)[][] = [];
   public remote: GameRemote = null as unknown as GameRemote;
   public client: GameClient;
   public onClone: ((game: GameModel) => void)[] = [];
   public winState: string | null = null;
   public gameStarted = false;
+  gameId = gameId++;
   constructor(
     public t: LocalizeFunc,
     public width: number,
     public height: number,
     public addLog: (
       kind: string,
-      params: { [name: string]: string } | null
+      params: { [name: string]: Stringifyable } | null
     ) => void,
     public player: Player
   ) {
@@ -575,7 +616,6 @@ export class GameModel {
     clone.client.game = clone;
     clone.onClone = this.onClone;
     clone.addAnimation = this.addAnimation;
-    clone.forceUpdate = this.forceUpdate;
     clone.winState = this.winState;
     clone.gameStarted = this.gameStarted;
     clone.onClone.forEach((f) => f(clone));
@@ -707,6 +747,10 @@ export class GameModel {
     }
   }
 
+  isDeployable(piece: Piece, p: Position): boolean {
+    return this.getPiece(p) === null && piece.canDeploy(p);
+  }
+
   isFOW(p: Position): [false, string] | [true, null] {
     /**
      * Fog of war
@@ -824,5 +868,43 @@ export class GameModel {
 
   startGame() {
     this.gameStarted = true;
+  }
+
+  getPieceDOM(position: Position): DOMRect {
+    return {
+      x: position.x * 50,
+      y: position.y * 50,
+      width: 50,
+      height: 50,
+    }
+  }
+
+  executeMove(move: Move) {
+    const pieceDOM = this.getPieceDOM(move.piece.position);
+    this.addLog("move", {
+      piece: move.piece.name,
+      x: move.piece.position.x,
+      y: move.piece.position.y,
+      toX: move.moveTo.position.x,
+      toY: move.moveTo.position.y
+    });
+    this.movePiece(move.piece.position, move.moveTo.position, move.moveTo.direction);
+    for (const action of move.actions) {
+      if (action in move.piece) {
+        const f = (move.piece as any)[action] as ActionCB;
+        if (typeof f === "function") {
+          this.addLog(action, {
+            piece: move.piece.name,
+            x: move.moveTo.position.x,
+            y: move.moveTo.position.y
+          });
+          f.call(move.piece, pieceDOM);
+          continue;
+        } else {
+          throw new Error(`Action ${action} is not a function`);
+        }
+      }
+      throw new Error(`Unknown action ${action}`);
+    }
   }
 }

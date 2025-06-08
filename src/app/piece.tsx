@@ -178,17 +178,20 @@ export default function PieceView({
   const boundingClientRect =
     ref.current != null
       ? ref.current.getBoundingClientRect()
-      : new DOMRect(0, 0, 0, 0);
+      : { x: 0, y: 0, width: 0, height: 0 };
+
   if (ref.current == null) {
     setTimeout(() => {
-      forceUpdate();
-    }, 0);
+      if (ref.current) {
+        forceUpdate();
+      }
+    });
   }
 
   const actionMenu: React.ReactNode[] = [];
 
-  const top = boundingClientRect.top;
-  const left = boundingClientRect.left;
+  const top = boundingClientRect.y;
+  const left = boundingClientRect.x;
 
   if (stateType === CellStateType.Selected &&
     piece != null &&
@@ -282,23 +285,23 @@ export default function PieceView({
       switch (direction) {
         case Direction.Up:
           turnArrowClassName += " up";
-          left = boundingClientRect.left + boundingClientRect.width / 2 - 8;
-          top = boundingClientRect.top - 8;
+          left = boundingClientRect.x + boundingClientRect.width / 2 - 8;
+          top = boundingClientRect.y - 8;
           break;
         case Direction.Down:
           turnArrowClassName += " down";
-          left = boundingClientRect.left + boundingClientRect.width / 2 - 8;
-          top = boundingClientRect.top + boundingClientRect.height - 8;
+          left = boundingClientRect.x + boundingClientRect.width / 2 - 8;
+          top = boundingClientRect.y + boundingClientRect.height - 8;
           break;
         case Direction.Left:
           turnArrowClassName += " left";
-          left = boundingClientRect.left - 8;
-          top = boundingClientRect.top + boundingClientRect.height / 2 - 8;
+          left = boundingClientRect.x - 8;
+          top = boundingClientRect.y + boundingClientRect.height / 2 - 8;
           break;
         case Direction.Right:
           turnArrowClassName += " right";
-          left = boundingClientRect.left + boundingClientRect.width - 8;
-          top = boundingClientRect.top + boundingClientRect.height / 2 - 8;
+          left = boundingClientRect.x + boundingClientRect.width - 8;
+          top = boundingClientRect.y + boundingClientRect.height / 2 - 8;
           break;
       }
       movablePiecePreviewRender.push(
@@ -362,7 +365,7 @@ export default function PieceView({
         </div>
       ) : null}
       {movablePiecePreviewRender}
-      <div className="piece" style={{ position: "absolute", top, left }}>
+      <div className="piece" style={{ position: "absolute", top, left, display: ref.current == null ? "none" : "block" }}>
         {piece !== null
           ? piece.player === game.player
             ? piece.render()

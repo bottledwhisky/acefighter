@@ -14,6 +14,19 @@ export default class AI {
     });
   }
 
+  deploy(piece: Piece) {
+    const allMoves: Position[] = [];
+    for (let y = 0; y < this.game.height; y++) {
+      for (let x = 0; x < this.game.width; x++) {
+        const pos = new Position(x, y);
+        if (this.game.isDeployable(piece, pos)) {
+          allMoves.push(pos);
+        }
+      }
+    }
+    return this.randomChoice(allMoves);
+  }
+
   randomChoice<T>(arr: T[]): T {
     return arr[Math.floor(Math.random() * arr.length)];
   }
@@ -67,10 +80,10 @@ export default class AI {
     }
     // if there are multiple kills possible, kill the most threatning one
     if (allMoves.length > 0) {
-      let threaten = 0;
+      let threaten = Number.NEGATIVE_INFINITY;
       let mostValuableKills: Move[] = [];
       for (const move of allMoves) {
-        const threat = this.getThreathen(move.killTarget!);
+        let threat = this.getThreathen(move.killTarget!) - move.priority * 1000;
         if (threat > threaten) {
           threaten = threat;
           mostValuableKills = [move];
@@ -101,7 +114,7 @@ export default class AI {
         let bestDistance = this.game.width + this.game.height;
         let toEnemy = allEnemyPieces[0];
         for (const enemy of allEnemyPieces) {
-          const distance = fighter.position.distance(enemy.position);
+          const distance = fighter.position.distance(enemy.position, fighter.direction);
           if (distance < bestDistance) {
             bestDistance = distance;
             toEnemy = enemy;

@@ -174,13 +174,60 @@ body {
   display: flex;
   justify-content: center;
   align-self: center;
+  text-align: center;
 }
 
 .announcement button {
   margin-top: 10px
 }
 
-@keyframes rollout {
+@keyframes rollin-rollout {
+  0% {
+    opacity: 0;
+    transform: translateX(-100px);
+  }
+
+  20% {
+    opacity: 1;
+    transform: none;
+  }
+
+  80% {
+    opacity: 1;
+    transform: none;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+}
+
+.announcement.auto-popup.rollin.rollout {
+  position: absolute;
+  animation: rollin-rollout 1.5s;
+  padding: 0;
+}
+
+@keyframes rollin {
+  0% {
+    opacity: 0;
+    transform: translateX(-100px);
+  }
+
+  20% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.announcement.auto-popup.rollin {
+  position: absolute;
+  animation: rollin 1.5s;
+  padding: 0;
+}
+
+@keyframes explosion {
   0% {
     transform: scale(0.1);
   }
@@ -195,7 +242,7 @@ body {
 }
 
 .explosion {
-  animation: rollout 0.4s;
+  animation: explosion 0.4s;
 }
 
 
@@ -244,4 +291,8 @@ button:disabled {
   cursor: not-allowed;
   background: rgba(0, 0, 0, .08);
   color: rgba(0, 0, 0, .3);
+}
+
+.board {
+  width: fit-content;
 }

@@ -1,9 +1,10 @@
 import { GameModel, Piece, Player, Position } from "@/game/boardModel";
-import PieceView, { CellState, CellStateType } from "./piece";
+import PieceView, { CellState } from "./piece";
 import { LocalizeFunc } from "@/game/i18n";
-import React, { useReducer } from "react";
+import { Ref } from "react";
 
 interface BoardProps {
+  ref?: Ref<HTMLDivElement>;
   t: LocalizeFunc;
   width: number;
   height: number;
@@ -13,9 +14,12 @@ interface BoardProps {
   pieces: (Piece | null)[][];
   onCellClicked?: (position: Position) => void;
   checkTurnEnd?: (game: GameModel, player: Player) => void;
+  states: CellState[];
+  setStates: (states: CellState[]) => void;
 }
 
 export default function Board({
+  ref,
   t,
   width,
   height,
@@ -25,12 +29,9 @@ export default function Board({
   pieces,
   onCellClicked,
   checkTurnEnd,
+  states,
+  setStates,
 }: BoardProps) {
-  const [, forceUpdate] = useReducer((x) => x + 1, 0);
-  const [states, setStates] = React.useState<CellState[]>(
-    new Array(height * width).fill([CellStateType.Idle, null])
-  );
-  game.forceUpdate = forceUpdate;
 
   const rows = [];
   for (let y = 0; y < height; y++) {
@@ -67,8 +68,8 @@ export default function Board({
     );
   }
   return (
-    <div>
+    <div ref={ref} className="board">
       {rows}
     </div>
   );
-}
+};

@@ -34,7 +34,7 @@ export default function Log({ t, logs, showLog, setShowLog }: {
         value={v}
         readOnly
         style={{
-          width: "100%",
+          width: "calc(100vw - 100px)",
           height: "100px",
           resize: "none",
         }}

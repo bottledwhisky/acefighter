@@ -14,6 +14,7 @@ import {
   Position,
 } from "@/game/boardModel";
 import { HotSeatGameRemote } from "@/game/gameClient";
+import { CellState, CellStateType } from "../piece";
 
 interface GameProps {
   width: number;
@@ -26,6 +27,9 @@ let pendingState: string | null = null;
 
 export default function HotSeatGame({ width, height, t }: GameProps) {
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
+  const [states, setStates] = useState<CellState[]>(
+    new Array(height * width).fill([CellStateType.Idle, null])
+  );
   const [animations, setAnimations] = useState<
     {
       id: number;
@@ -81,7 +85,7 @@ export default function HotSeatGame({ width, height, t }: GameProps) {
   }
 
   const [showLog, setShowLog] = useState<boolean>(false);
-  const [gameState, _setGameState] = useState<string>("prepare-deploy-Player1");
+  const [gameState, _setGameState] = useState<string>(`prepare-deploy-${Player.Player1}`);
 
   function setGameState(newState: string) {
     if (animations.length > 0) {
@@ -107,19 +111,24 @@ export default function HotSeatGame({ width, height, t }: GameProps) {
     params: { [name: string]: Stringifyable } | null = null
   ) {
     const log = t(kind, params);
+    logs.push(log);
     const newLogs = logs.slice();
-    newLogs.push(log);
     setLogs(newLogs);
     console.log(log);
     return log;
   }
-  const initGameModels = [
-    new GameModel(t, width, height, addLog, Player.Player1),
-    new GameModel(t, width, height, addLog, Player.Player2),
-  ];
-  initGameModels[0].remote = new HotSeatGameRemote(initGameModels[1]);
-  initGameModels[1].remote = new HotSeatGameRemote(initGameModels[0]);
-  const [gameModels, setGameModels] = useState<GameModel[]>(initGameModels);
+  const gameModelsReact = useState<GameModel[]>([]);
+  let gameModels = gameModelsReact[0];
+  const setGameModels = gameModelsReact[1];
+  if (gameModels.length === 0) {
+    gameModels = [
+      new GameModel(t, width, height, addLog, Player.Player1),
+      new GameModel(t, width, height, addLog, Player.Player2),
+    ];
+    gameModels[0].remote = new HotSeatGameRemote(gameModels[1]);
+    gameModels[1].remote = new HotSeatGameRemote(gameModels[0]);
+    setGameModels(gameModels);
+  }
   gameModels[0].addLog = addLog;
   gameModels[1].addLog = addLog;
   const [hintText, setHintText] = useState<string | null>(null);
@@ -173,15 +182,17 @@ export default function HotSeatGame({ width, height, t }: GameProps) {
           gameModels[1].startGame();
           gameModels[1].syncRevealedCells();
           setGameState("before-turn-Player1");
+          return {};
         }
       }
     }
     const piece = undeployedPieces[0];
+    piece.game = gameModels[0];
 
     function onCellClicked(p: Position) {
       const newGameModel = gameModel.clone();
       if (
-        newGameModel.isInTerritory(p, newGameModel.player) &&
+        newGameModel.isDeployable(piece, p) &&
         newGameModel.addPiece(piece, p)
       ) {
         setUndeployedPieces(undeployedPieces.slice(1));
@@ -279,6 +290,8 @@ export default function HotSeatGame({ width, height, t }: GameProps) {
       <div>
         <Board
           t={t}
+          states={states}
+          setStates={setStates}
           width={width}
           height={height}
           game={gameModel}
@@ -301,7 +314,7 @@ export default function HotSeatGame({ width, height, t }: GameProps) {
             );
           }}
         >
-          {t("endTurn", { player: gameModel.player })}
+          {t("endTurn")}
         </button> : null}
         <div className="hint">{hintText && t(hintText)}</div>
         <Log key="log" showLog={showLog} setShowLog={setShowLog} t={t} logs={logs}></Log>
