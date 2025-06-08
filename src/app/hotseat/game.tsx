@@ -254,7 +254,7 @@ export default function HotSeatGame({ width, height, t }: GameProps) {
         <div className="announcement">
           {t(gameModel.winState, { player: gameModel.player })}
           <Link
-            href={basePath}
+            href="/"
           >
             {t("back-to-main-screen")}
           </Link>
