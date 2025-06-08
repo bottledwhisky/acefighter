@@ -83,7 +83,7 @@ export default class AI {
       let threaten = Number.NEGATIVE_INFINITY;
       let mostValuableKills: Move[] = [];
       for (const move of allMoves) {
-        let threat = this.getThreathen(move.killTarget!) - move.priority * 1000;
+        const threat = this.getThreathen(move.killTarget!) - move.priority * 1000;
         if (threat > threaten) {
           threaten = threat;
           mostValuableKills = [move];

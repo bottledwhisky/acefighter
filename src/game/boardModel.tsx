@@ -136,7 +136,7 @@ export class Move {
   constructor(
     public piece: Piece,
     public moveTo: { position: Position; direction: Direction },
-    public actions: string[],
+    public actions: { name: string, action: ActionCB }[],
     public killTarget?: Piece,
     public priority: number = 0,
   ) { }
@@ -482,7 +482,10 @@ export class Fighter extends Piece {
         const piece = this.game.getPiece(newMissilePosition);
         if (piece != null) {
           if (piece.player !== this.player) {
-            killMoves.push(new Move(this, move, ["fire"], piece));
+            killMoves.push(new Move(this, move, [{
+              name: "fire",
+              action: this.fire
+            }], piece));
           } else {
             break;
           }
@@ -889,22 +892,14 @@ export class GameModel {
       toY: move.moveTo.position.y
     });
     this.movePiece(move.piece.position, move.moveTo.position, move.moveTo.direction);
-    for (const action of move.actions) {
-      if (action in move.piece) {
-        const f = (move.piece as any)[action] as ActionCB;
-        if (typeof f === "function") {
-          this.addLog(action, {
-            piece: move.piece.name,
-            x: move.moveTo.position.x,
-            y: move.moveTo.position.y
-          });
-          f.call(move.piece, pieceDOM);
-          continue;
-        } else {
-          throw new Error(`Action ${action} is not a function`);
-        }
-      }
-      throw new Error(`Unknown action ${action}`);
+    for (const { name, action } of move.actions) {
+      this.addLog(name, {
+        piece: move.piece.name,
+        x: move.moveTo.position.x,
+        y: move.moveTo.position.y
+      });
+      action.call(move.piece, pieceDOM);
+      continue;
     }
   }
 }
