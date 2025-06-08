@@ -14,7 +14,6 @@ import {
   Position,
 } from "@/game/boardModel";
 import { HotSeatGameRemote } from "@/game/gameClient";
-import { basePath } from "@/config";
 
 interface GameProps {
   width: number;
